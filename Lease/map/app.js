@@ -38,8 +38,12 @@ function initialize() {
 
   drawRectangle(area1);
   drawRectangle(area2);
+  
   drawCircle(pt1, ft2m(300), '#FF0000');
   drawCircle(pt1, ft2m(1000), 'blue');
+
+  drawCircle(pt2, ft2m(300), '#FF0000');
+  drawCircle(pt2, ft2m(1000), 'blue');
 
 
 
