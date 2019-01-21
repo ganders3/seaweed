@@ -1,7 +1,6 @@
 // https://en.wikipedia.org/wiki/Haversine_formula
 // http://www.movable-type.co.uk/scripts/latlong.html
-
-var allCoordinates = [];
+dmr = [];
 
 function initialize() {
 
@@ -17,15 +16,19 @@ function initialize() {
 
   var map = new google.maps.Map(document.getElementById('map'), {
     zoom: 16,
+    // Coordinate to center the map upon
     center: {lat: 43.555588, lng: -70.343551},
-    mapTypeId: 'satellite'
+    // Show the satellite view as the default
+    mapTypeId: 'satellite',
+    //scaleControl adds a scale in the bottom corner
+    scaleControl: true
   });
 
+  // Adds the NOAA nautical charts
   var api = new NauticalChartsAPI();
   google.maps.event.addListener(api,'load',function() { 
     // Select the panel we want.
     var panel = api.getPanelByFileName('13287_1');
-    // var panel = api.getPanelByFileName('18740_1');
     // map.fitBounds(panel.getBounds());
     // add panel as a tile layer
     map.overlayMapTypes.push(panel.getMapType());
@@ -33,8 +36,15 @@ function initialize() {
 
 
   //================running the program================
-  var dmr = readDMR(URL_DMR);
+  dmr = readDMR(URL_DMR);
   console.log('dmr:', dmr);
+  for (i=0; i> dmr.length; i++) {
+    console.log(dmr[i]);
+  }
+  dmr.forEach((d) => {
+    console.log(d.lat);
+  });
+
 
   for (i=0; i < points.length; i++) {
     var area = rectangleBounds(points[i], ft2m(20), ft2m(20));
@@ -45,19 +55,18 @@ function initialize() {
   //================running the program================
 
 
-  function initializeArray(arr) {
-
-  }
-
   function readDMR(source) {
     var arr = new Array;
     $.getJSON(source, function(data) {
       data.features.forEach((f) => {
-        let coords = [{
-          lat: f.geometry.coordinates[0][0][0],
-          lng: f.geometry.coordinates[0][0][1]
-        }];
+        let coords = {
+          // Adding coordinates of the FIRST point in each existing aquaculture spot
+          // Need to modify to draw the entire space with polygons
+          lat: f.geometry.coordinates[0][0][1],
+          lng: f.geometry.coordinates[0][0][0]
+        };
         arr.push(coords);
+        drawMarker(coords);
       });
     });
     return arr;
@@ -65,34 +74,33 @@ function initialize() {
 
   function drawMarker(position) {
     var marker = new google.maps.Marker({
-      position: position,
       map: map,
-      title: 'Holes'
+      position: position
     });
   }
 
   function drawRectangle(bounds) {
     var rectangle = new google.maps.Rectangle({
+      map: map,
+      bounds: bounds,
       strokeColor: '#FF0000',
       strokeOpacity: 0.8,
       strokeWeight: 2,
       fillColor: '#FF0000',
-      fillOpacity: 0.35,
-      map: map,
-      bounds: bounds
+      fillOpacity: 0.35
     });
   }
 
   function drawCircle(position, radius, color) {
     var circle = new google.maps.Circle({
+      map: map,
+      center: position,
+      radius: radius,
       strokeColor: color,
       strokeOpacity: 0.8,
       strokeWeight: 2,
       // fillColor: '#FF0000',
-      fillOpacity: 0,
-      map: map,
-      center: position,
-      radius: radius
+      fillOpacity: 0
     })
   }
 
