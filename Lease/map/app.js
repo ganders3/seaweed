@@ -1,20 +1,18 @@
 // https://en.wikipedia.org/wiki/Haversine_formula
 // http://www.movable-type.co.uk/scripts/latlong.html
 
+var allCoordinates = [];
+
 function initialize() {
 
   //==========================================================
   const EARTH_RADIUS = 6.371e6;
+  const URL_DMR = 'https://opendata.arcgis.com/datasets/a0b3c775cfc243a2b92df328ad85c642_2.geojson'
 
-  var pt1 = {lat: 43.555588, lng: -70.343551};
-  var pt2 = {lat: 43.557133, lng: -70.348036};
-
-  var bds = {
-      north: 43.557133,
-      south: 43.555588,
-      east: -70.343551,
-      west: -70.348036
-    };
+  var points  = [
+    {lat: 43.557133, lng: -70.348036},
+    {lat: 43.555588, lng: -70.343551}
+  ];
   //==========================================================
 
   var map = new google.maps.Map(document.getElementById('map'), {
@@ -33,19 +31,37 @@ function initialize() {
     map.overlayMapTypes.push(panel.getMapType());
   });
 
-  var area1 = rectangleBounds(pt1, 10);
-  var area2 = rectangleBounds(pt2, 10);
 
-  drawRectangle(area1);
-  drawRectangle(area2);
-  
-  drawCircle(pt1, ft2m(300), '#FF0000');
-  drawCircle(pt1, ft2m(1000), 'blue');
+  //================running the program================
+  var dmr = readDMR(URL_DMR);
+  console.log('dmr:', dmr);
 
-  drawCircle(pt2, ft2m(300), '#FF0000');
-  drawCircle(pt2, ft2m(1000), 'blue');
+  for (i=0; i < points.length; i++) {
+    var area = rectangleBounds(points[i], ft2m(20), ft2m(20));
+    drawRectangle(area);
+    drawCircle(points[i], ft2m(300), 'red');
+    drawCircle(points[i], ft2m(1000), 'blue');
+  }
+  //================running the program================
 
 
+  function initializeArray(arr) {
+
+  }
+
+  function readDMR(source) {
+    var arr = new Array;
+    $.getJSON(source, function(data) {
+      data.features.forEach((f) => {
+        let coords = [{
+          lat: f.geometry.coordinates[0][0][0],
+          lng: f.geometry.coordinates[0][0][1]
+        }];
+        arr.push(coords);
+      });
+    });
+    return arr;
+  }
 
   function drawMarker(position) {
     var marker = new google.maps.Marker({
@@ -81,41 +97,25 @@ function initialize() {
   }
 
   // Returns a box centered around the coordinate, with sides the specified number of meters 
-  function rectangleBounds(centerPosition, dist) {
-    var c = 0.5*dist/EARTH_RADIUS;
+  function rectangleBounds(centerPosition, height, width) {
+    var h = 0.5*height/EARTH_RADIUS;
+    var w = 0.5*width/EARTH_RADIUS;
     var lat = deg2Rad(centerPosition.lat);
     var lng = deg2Rad(centerPosition.lng);
 
     var box = {
-      north: rad2Deg(c + lat),
-      south: -rad2Deg(c - lat),
-      // The function is valid for north and south, but not for east/west
-      // For now I filled in the same formula
-      // To get north/south I raduced the haversine formula from Wikipedia to:
-      // (I am using y as phi and x as lambda)
-      // y2 = d/r - y1
-      east: rad2Deg(c + lng),
-      west: -rad2Deg(c - lng)
+      north: rad2Deg(lat + h),
+      south: rad2Deg(lat - h),
+      east: rad2Deg(lng + w),
+      west: rad2Deg(lng - w)
     }
     return box;
   }
 
-  function deg2Rad(deg) {
-    return deg*Math.PI/180;
-  }
-
-  function rad2Deg(rad) {
-    return 180*rad/Math.PI;
-  }
-
-  function ft2m(ft) {
-    return ft/3.281;
-  }
-
-  function m2ft(m) {
-    return m*3.281;
-  }
-
+  function deg2Rad(deg) {return deg*Math.PI/180}
+  function rad2Deg(rad) {return 180*rad/Math.PI}
+  function ft2m(ft) {return ft/3.281}
+  function m2ft(m) {return m*3.281}
 
 
 }
