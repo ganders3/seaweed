@@ -1,7 +1,7 @@
 // https://en.wikipedia.org/wiki/Haversine_formula
 // http://www.movable-type.co.uk/scripts/latlong.html
-dmr = [];
-
+// var dmr = [];
+// var dmr;
 function initialize() {
 
   //==========================================================
@@ -36,41 +36,50 @@ function initialize() {
 
 
   //================running the program================
-  dmr = readDMR(URL_DMR);
-  console.log('dmr:', dmr);
-  for (i=0; i> dmr.length; i++) {
-    console.log(dmr[i]);
-  }
-  dmr.forEach((d) => {
-    console.log(d.lat);
-  });
-
-
+  
   for (i=0; i < points.length; i++) {
     var area = rectangleBounds(points[i], ft2m(20), ft2m(20));
     drawRectangle(area);
     drawCircle(points[i], ft2m(300), 'red');
     drawCircle(points[i], ft2m(1000), 'blue');
   }
+
+  parseDMR(URL_DMR);
+
   //================running the program================
 
 
-  function readDMR(source) {
-    var arr = new Array;
-    $.getJSON(source, function(data) {
-      data.features.forEach((f) => {
-        let coords = {
-          // Adding coordinates of the FIRST point in each existing aquaculture spot
-          // Need to modify to draw the entire space with polygons
-          lat: f.geometry.coordinates[0][0][1],
-          lng: f.geometry.coordinates[0][0][0]
-        };
-        arr.push(coords);
-        drawMarker(coords);
+  function parseDMR(source) {
+    var json = $.getJSON(source, function() {
+      dmr = JSON.parse(json.responseText);
+
+      data = [];
+      dmr.features.forEach((f) => {
+        var coords = [];
+        f.geometry.coordinates[0].forEach((c) => {
+          coords.push({
+            lat: c[1],
+            lng: c[0]
+          });
+        });
+        data.push({
+          leaseHolder: f.properties.LEASEHOLDE,
+          contact: f.properties.CONTACT,
+          coordinates: coords
+        });
       });
+
+
+      data.forEach((d) => {
+        drawPolygon(d.coordinates, d.leaseHolder);
+        // console.log(coordMidpoint(d.coordinates));
+        // listen();
+      });
+
+
     });
-    return arr;
   }
+
 
   function drawMarker(position) {
     var marker = new google.maps.Marker({
@@ -104,6 +113,38 @@ function initialize() {
     })
   }
 
+  function drawPolygon(coordinateArray, dataString) {
+
+    var polygon = new google.maps.Polygon({
+      paths: coordinateArray,
+      strokeColor: '#FF0000',
+      strokeOpacity: 0.8,
+      strokeWeight: 2,
+      fillColor: '#FF0000',
+      fillOpacity: 0.35
+    });
+    polygon.setMap(map);
+
+    var infowindow = new google.maps.InfoWindow({
+      size: new google.maps.Size(150, 50),
+      content: dataString,
+      position: coordMidpoint(coordinateArray)
+    });
+
+    polygon.addListener('mouseover', function() {
+      // console.log(dataString);
+      this.setOptions({fillOpacity: 0.8})
+    });
+
+    polygon.addListener('mouseout', function() {
+      this.setOptions({fillOpacity: 0.35})
+    });
+
+    polygon.addListener('click', function() {
+      infowindow.open(map);
+    });
+  }
+
   // Returns a box centered around the coordinate, with sides the specified number of meters 
   function rectangleBounds(centerPosition, height, width) {
     var h = 0.5*height/EARTH_RADIUS;
@@ -118,6 +159,12 @@ function initialize() {
       west: rad2Deg(lng - w)
     }
     return box;
+  }
+
+  function coordMidpoint(coordinateArray) {
+    var midLat = coordinateArray.map(a => a.lat).reduce((a,c) => a+c)/coordinateArray.length;
+    var midLng = coordinateArray.map(a => a.lng).reduce((a,c) => a+c)/coordinateArray.length;
+    return {lat: midLat, lng:midLng}
   }
 
   function deg2Rad(deg) {return deg*Math.PI/180}
