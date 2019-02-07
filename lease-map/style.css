@@ -9,3 +9,10 @@ html, body {
   margin: 0;
   padding: 0;
 }
+
+#can {
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    z-index: 3;
+}

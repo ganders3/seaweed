@@ -10,7 +10,12 @@ function initialize() {
 
   var points  = [
     {lat: 43.557133, lng: -70.348036},
-    {lat: 43.555588, lng: -70.343551}
+    {lat: 43.555588, lng: -70.343551},
+    // new 4
+    {lat: 43.524767, lng: -70.341655},
+    // {lat: 43.52019, lng: -70.339658},
+    {lat: 43.530172, lng: -70.34750},
+    // {lat: 43.53, lng: -70.342441}
   ];
   //==========================================================
 
@@ -45,6 +50,7 @@ function initialize() {
   }
 
   parseDMR(URL_DMR);
+  drawCompass();
 
   //================running the program================
 
@@ -80,6 +86,12 @@ function initialize() {
     });
   }
 
+
+  function drawCompass() {
+    var canvas = document.getElementById('can'),
+    ctx = canvas.getContext('2d');
+    ctx.fillRect(25, 100, 100, 100)
+  }
 
   function drawMarker(position) {
     var marker = new google.maps.Marker({
