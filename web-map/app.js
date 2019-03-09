@@ -24,12 +24,17 @@ distances = [];
 
 function initialize() {
 
+
   //==========================================================
   const EARTH_RADIUS = 6.371e6;
   const URL_DMR = 'data/dmr.min.json';
   // const URL_DMR = 'https://opendata.arcgis.com/datasets/a0b3c775cfc243a2b92df328ad85c642_2.geojson';
   const URL_SCAR = 'data/taxmap.min.json';
   //==========================================================
+
+  leases = parseDMR(URL_DMR);
+  landowners = parseLandowners(URL_SCAR);
+
 
   var map = new google.maps.Map(document.getElementById('map'), {
     zoom: 16,
@@ -51,16 +56,44 @@ function initialize() {
   });
 
 
-  map.addListener('rightclick', function(event) {displayCoordinates(event)});
+  var selecting = false;
+  window.onkeydown = function(e) {
+    selecting = (
+      (e.keyIdentifier == 'Control') ||
+      (e.ctrlKey == true)
+      );
+  }
+  window.onkeyup = function(e) {
+    selecting = false;
+  }
 
-  function displayCoordinates(event) {
+  map.addListener('rightclick', function(event) {
+    console.log(selecting);
     var lat = event.latLng.lat();
     var lng = event.latLng.lng();
 
     var coord = {lat: lat, lng: lng}
     var contentString = '{lat: ' + lat + ', lng: ' + lng + '}';
+
+    if (selecting) {
+      const GUBMINS = ft2m(1000);
+      // MAKE THIS A FUNCTION LATER
+      // calculateDistances(coord, landowners);
+      cheese = landowners.filter(x => 
+        haversineDistance(x.coordinates, coord) < GUBMINS);
+      // console.log('cheese:', cheese);
+      // contentString += '<br> hol';
+      cheese.forEach(c => {
+        contentString += '<br>' +
+          c.grantee1 + ', ' +
+          // c.grantee2 + ', ' +
+          c.mailingAddress + ' ' + c.mailingCity + ' ' + c.mailingState + ' ' + c.mailingZip;
+      });
+    }
+
     drawInfoWindow(contentString, coord);
-  }
+  });
+
 
 
   //================running the program================
@@ -70,24 +103,15 @@ function initialize() {
     var pointIndex = (i + 1).toString();
 
     drawMarker(points[i], pointIndex);
-    drawCircle(points[i], ft2m(300), 'red');
-    drawCircle(points[i], ft2m(1000), 'blue');
+    // drawCircle(points[i], ft2m(300), 'red');
+    // drawCircle(points[i], ft2m(1000), 'blue');
   }
 
-  leases = parseDMR(URL_DMR);
-  landowners = parseLandowners(URL_SCAR);
-
-
-
-
+  // leases = parseDMR(URL_DMR);
+  // landowners = parseLandowners(URL_SCAR);
 
 
   drawCompass();
-
-  // address2LatLng('299 BEECH RIDGE RD Scarborough ME', function(coord) {
-  //   var cheese = haversineDistance(coord, points[1]);
-  //   console.log(cheese);
-  // });
   //================running the program================
 
 
@@ -121,6 +145,7 @@ function initialize() {
         });
       });
     });
+
     return output;
   }
 
@@ -133,10 +158,10 @@ function initialize() {
         let coord = {lat: d.lat, lng: d.lon}
 
         // Calculate the distance between each point and each landowner
-        let dist = []
-        for (i=0; i<points.length; i++) {
-          dist.push(m2ft(haversineDistance(coord, points[i])));
-        }
+        // let dist = []
+        // for (i=0; i<points.length; i++) {
+        //   dist.push(m2ft(haversineDistance(coord, points[i])));
+        // }
 
         output.push({
           id: d.STATE_ID,
@@ -148,7 +173,7 @@ function initialize() {
           mailingState: d.State,
           mailingZip: d.Zip,
           coordinates: coord,
-          distances: dist
+          // distances: dist
         });
        });
     });
@@ -251,7 +276,6 @@ function initialize() {
     }
     return box;
   }
-
 
   function address2LatLng(address, callback) {
     var geocoder = new google.maps.Geocoder();
