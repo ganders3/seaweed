@@ -26,8 +26,9 @@ function initialize() {
 
   //==========================================================
   const EARTH_RADIUS = 6.371e6;
-  const URL_DMR = 'https://opendata.arcgis.com/datasets/a0b3c775cfc243a2b92df328ad85c642_2.geojson';
-  const URL_SCAR = 'data/taxmap.json';
+  const URL_DMR = 'data/dmr.min.json';
+  // const URL_DMR = 'https://opendata.arcgis.com/datasets/a0b3c775cfc243a2b92df328ad85c642_2.geojson';
+  const URL_SCAR = 'data/taxmap.min.json';
   //==========================================================
 
   var map = new google.maps.Map(document.getElementById('map'), {
@@ -35,7 +36,7 @@ function initialize() {
     // Coordinate to center the map upon
     center: {lat: 43.555588, lng: -70.343551},
     // Show the satellite view as the default
-    mapTypeId: 'satellite',
+    mapTypeId: 'roadmap',
     //scaleControl adds a scale in the bottom corner
     scaleControl: true
   });
@@ -91,6 +92,8 @@ function initialize() {
 
 
   function parseDMR(source) {
+    const COORD_CUTOFF_MAX = 43.567640909258415;
+    const COORD_CUTOFF_MIN = 43.434592821089645;
     var output = [];
     var json = $.getJSON(source, function() {
       data = JSON.parse(json.responseText);
@@ -103,11 +106,15 @@ function initialize() {
             lng: c[0]
           });
         });
-        output.push({
-          leaseHolder: f.properties.LEASEHOLDE,
-          contact: f.properties.CONTACT,
-          coordinates: coords
-        });
+
+        if (Math.min(...coords.map(a => a.lat)) < COORD_CUTOFF_MAX &&
+          Math.min(...coords.map(a => a.lat)) > COORD_CUTOFF_MIN) {
+            output.push({
+              leaseHolder: f.properties.LEASEHOLDE,
+              contact: f.properties.CONTACT,
+              coordinates: coords
+            });
+        }
 
         output.forEach(o => {
           drawPolygon(o, o.coordinates, o.leaseHolder);
