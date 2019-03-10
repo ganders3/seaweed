@@ -1,11 +1,7 @@
-// https://en.wikipedia.org/wiki/Haversine_formula
-// http://www.movable-type.co.uk/scripts/latlong.html
-
 leases = [];
 landowners = [];
 
 points  = [
-  // {lat: 43.558899, lng: -70.354702},
 
   {lat: 43.55890335761595, lng: -70.35474212466664},
   {lat: 43.558496056236656, lng: -70.35487984470706},
@@ -20,10 +16,8 @@ points  = [
   {lat: 43.520070, lng: -70.280611}
 ];
 
-distances = [];
 
 function initialize() {
-
 
   //==========================================================
   const EARTH_RADIUS = 6.371e6;
@@ -38,12 +32,9 @@ function initialize() {
 
   var map = new google.maps.Map(document.getElementById('map'), {
     zoom: 16,
-    // Coordinate to center the map upon
     center: {lat: 43.555588, lng: -70.343551},
-    // Show the satellite view as the default
     mapTypeId: 'roadmap',
-    //scaleControl adds a scale in the bottom corner
-    scaleControl: true
+    scaleControl: true //scaleControl adds a scale in the bottom corner
   });
 
   var geocoder = new google.maps.Geocoder();
@@ -81,16 +72,12 @@ function initialize() {
       // calculateDistances(coord, landowners);
       cheese = landowners.filter(x => 
         haversineDistance(x.coordinates, coord) < GUBMINS);
-      // console.log('cheese:', cheese);
-      // contentString += '<br> hol';
       cheese.forEach(c => {
         contentString += '<br>' +
           c.grantee1 + ', ' +
-          // c.grantee2 + ', ' +
           c.mailingAddress + ' ' + c.mailingCity + ' ' + c.mailingState + ' ' + c.mailingZip;
       });
     }
-
     drawInfoWindow(contentString, coord);
   });
 
@@ -106,10 +93,6 @@ function initialize() {
     // drawCircle(points[i], ft2m(300), 'red');
     // drawCircle(points[i], ft2m(1000), 'blue');
   }
-
-  // leases = parseDMR(URL_DMR);
-  // landowners = parseLandowners(URL_SCAR);
-
 
   drawCompass();
   //================running the program================
@@ -157,12 +140,6 @@ function initialize() {
       data.forEach(d => {
         let coord = {lat: d.lat, lng: d.lon}
 
-        // Calculate the distance between each point and each landowner
-        // let dist = []
-        // for (i=0; i<points.length; i++) {
-        //   dist.push(m2ft(haversineDistance(coord, points[i])));
-        // }
-
         output.push({
           id: d.STATE_ID,
           address: d.PROP_LOC,
@@ -173,7 +150,6 @@ function initialize() {
           mailingState: d.State,
           mailingZip: d.Zip,
           coordinates: coord,
-          // distances: dist
         });
        });
     });
@@ -217,7 +193,6 @@ function initialize() {
       strokeColor: color,
       strokeOpacity: 0.8,
       strokeWeight: 2,
-      // fillColor: '#FF0000',
       fillOpacity: 0
     })
   }
@@ -294,21 +269,15 @@ function initialize() {
 
   function geocodeAddress(geocoder, map, addressString = '1 Walker St Portland ME') {
     var address = addressString;
-    // var address = '1 Walker St Portland ME 04012';
     geocoder.geocode({'address': address}, function(results, status) {
     if (status === 'OK') {
       console.log(results);
       console.log(points[0]);
       var lat = results[0].geometry.location.lat();
       var lng = results[0].geometry.location.lng();
-      // console.log(results)
       console.log(lat, lng);
       return({'lat': lat, 'lng': lng});
 
-      // var marker = new google.maps.Marker({
-      //   map: map,
-      //   position: results[0].geometry.location
-      // });
 
     } else {
       alert('Geocode was not successful for the following reason: ' + status);
