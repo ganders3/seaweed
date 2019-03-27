@@ -70,9 +70,9 @@ function initialize() {
       const GUBMINS = ft2m(1000);
       // MAKE THIS A FUNCTION LATER
       // calculateDistances(coord, landowners);
-      cheese = landowners.filter(x => 
+      closeLandowners = landowners.filter(x => 
         haversineDistance(x.coordinates, coord) < GUBMINS);
-      cheese.forEach(c => {
+      closeLandowners.forEach(c => {
         contentString += '<br>' +
           c.grantee1 + ', ' +
           c.mailingAddress + ' ' + c.mailingCity + ' ' + c.mailingState + ' ' + c.mailingZip;
