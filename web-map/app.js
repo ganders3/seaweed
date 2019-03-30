@@ -1,19 +1,30 @@
 leases = [];
 landowners = [];
+vicinityLandowners = [];
 
 points  = [
+  // {lat: 43.55890335761595, lng: -70.35474212466664},
+  // {lat: 43.558496056236656, lng: -70.35487984470706},
 
-  {lat: 43.55890335761595, lng: -70.35474212466664},
-  {lat: 43.558496056236656, lng: -70.35487984470706},
+  // {lat: 43.55701862974057, lng: -70.34682329499816},
+  // {lat: 43.557049730009915, lng: -70.3463083108673},
 
-  {lat: 43.55701862974057, lng: -70.34682329499816},
-  {lat: 43.557049730009915, lng: -70.3463083108673},
+  // {lat: 43.527249470181346, lng: -70.34599193458439},
+  // {lat: 43.52726934094715, lng: -70.34506376588439},
 
-  {lat: 43.527249470181346, lng: -70.34599193458439},
-  {lat: 43.52726934094715, lng: -70.34506376588439},
+  // {lat: 43.515225, lng: -70.286559},
+  // {lat: 43.520070, lng: -70.280611}
+];
 
-  {lat: 43.515225, lng: -70.286559},
-  {lat: 43.520070, lng: -70.280611}
+leaseArea = [
+  {lat: 43.559137, lng: -70.355621},
+  {lat: 43.558824, lng: -70.354155},
+  {lat: 43.55833, lng: -70.353125},
+  {lat: 43.557738, lng: -70.351106},
+  {lat: 43.557427, lng: -70.351278},
+  {lat: 43.557711, lng: -70.352378},
+  {lat: 43.558511, lng: -70.354236},
+  {lat: 43.558935, lng: -70.355701}
 ];
 
 
@@ -21,6 +32,7 @@ function initialize() {
 
   //==========================================================
   const EARTH_RADIUS = 6.371e6;
+  const LANDOWNER_DISTANCE = 1000;
   const URL_DMR = 'data/dmr.min.json';
   // const URL_DMR = 'https://opendata.arcgis.com/datasets/a0b3c775cfc243a2b92df328ad85c642_2.geojson';
   const URL_SCAR = 'data/taxmap.min.json';
@@ -40,11 +52,37 @@ function initialize() {
   var geocoder = new google.maps.Geocoder();
 
   // Adds the NOAA nautical charts
-  var api = new NauticalChartsAPI();
-  google.maps.event.addListener(api,'load',function() { 
-    var panel = api.getPanelByFileName('13287_1');
-    map.overlayMapTypes.push(panel.getMapType());
+  // var nc = new NauticalChartsAPI();
+  // google.maps.event.addListener(nc,'load',function() { 
+  //   var panel = nc.getPanelByFileName('13287_1');
+  //   // panel.setOpacity(1);
+  //   map.overlayMapTypes.push(panel.getMapType());
+  //   // console.log(map.overlayMapTypes);
+  // });
+
+
+  var drawingManager = new google.maps.drawing.DrawingManager({
+    drawingMode: null, //google.maps.drawing.OverlayType.MARKER,
+    drawingControl: true,
+    drawingControlOptions: {
+      position: google.maps.ControlPosition.TOP_CENTER,
+      drawingModes: ['marker', 'circle', 'polygon', 'polyline', 'rectangle']
+    },
+    markerOptions: {icon: 'https://developers.google.com/maps/documentation/javascript/examples/full/images/beachflag.png'},
+    circleOptions: {
+      fillColor: '#ffff00',
+      fillOpacity: 1,
+      strokeWeight: 5,
+      clickable: false,
+      editable: true,
+      zIndex: 1
+    }
   });
+  drawingManager.setMap(map);
+
+
+  leaseArea.forEach(a => {drawCircle(a, ft2m(1000), 'blue', 0.2, 'blue', 0.2);});
+  drawPolygon(leaseArea, leaseArea, 'Proposed Lease Site');
 
 
   var selecting = false;
@@ -59,7 +97,7 @@ function initialize() {
   }
 
   map.addListener('rightclick', function(event) {
-    console.log(selecting);
+    // console.log(selecting);
     var lat = event.latLng.lat();
     var lng = event.latLng.lng();
 
@@ -69,9 +107,9 @@ function initialize() {
     if (selecting) {
       const GUBMINS = ft2m(1000);
       // MAKE THIS A FUNCTION LATER
-      // calculateDistances(coord, landowners);
-      closeLandowners = landowners.filter(x => 
-        haversineDistance(x.coordinates, coord) < GUBMINS);
+
+      closeLandowners = findCloseLandowners(landowners, coord, GUBMINS);
+
       closeLandowners.forEach(c => {
         contentString += '<br>' +
           c.grantee1 + ', ' +
@@ -82,23 +120,40 @@ function initialize() {
   });
 
 
+  function findCloseLandowners(landowners, coordinate, distanceInMeters = 0) {
+    var arr = landowners.filter(x =>
+      haversineDistance(x.coordinates, coordinate) < distanceInMeters);
+    console.log('arr:', arr);
+    return arr;
+  }
+
+
 
   //================running the program================
-  
-  for (i=0; i < points.length; i++) {
-    var area = rectangleBounds(points[i], ft2m(20), ft2m(20));
-    var pointIndex = (i + 1).toString();
 
-    drawMarker(points[i], pointIndex);
-    // drawCircle(points[i], ft2m(300), 'red');
-    // drawCircle(points[i], ft2m(1000), 'blue');
-  }
+  leaseArea.forEach(coord => {
+    console.log(coord);
+    // console.log(landowners);
+    let cl = findCloseLandowners(landowners, coord, ft2m(1000))
+    console.log('landowners:', landowners)
+    // console.log(cl);
+    vicinityLandowners.push(cl)
+  });  
+  // for (i=0; i < points.length; i++) {
+  //   var area = rectangleBounds(points[i], ft2m(20), ft2m(20));
+  //   var pointIndex = (i + 1).toString();
+
+  //   drawMarker(points[i], pointIndex);
+  //   // drawCircle(points[i], ft2m(300), 'red');
+  //   // drawCircle(points[i], ft2m(1000), 'blue');
+  // }
 
   drawCompass();
   //================running the program================
 
 
   function parseDMR(source) {
+    // Cut off portions of the DMR list that aren't needed
     const COORD_CUTOFF_MAX = 43.567640909258415;
     const COORD_CUTOFF_MIN = 43.434592821089645;
     var output = [];
@@ -162,7 +217,8 @@ function initialize() {
   function drawCompass() {
     var canvas = document.getElementById('can'),
     ctx = canvas.getContext('2d');
-    ctx.fillRect(25, 100, 100, 100)
+    ctx.fillStyle = 'white';
+    ctx.fillRect(25, 100, 100, 100);
   }
 
   function drawMarker(position, label = '') {
@@ -185,26 +241,27 @@ function initialize() {
     });
   }
 
-  function drawCircle(position, radius, color) {
+  function drawCircle(position, radius, strokeColor = 'red', strokeOpacity = 0.8, fillColor = 'red', fillOpacity = 0.5) {
     var circle = new google.maps.Circle({
       map: map,
       center: position,
       radius: radius,
-      strokeColor: color,
-      strokeOpacity: 0.8,
+      strokeColor: strokeColor,
+      strokeOpacity: strokeOpacity,
       strokeWeight: 2,
-      fillOpacity: 0
+      fillColor: fillColor,
+      fillOpacity: fillOpacity
     })
   }
 
   function drawPolygon(data, coordinateArray, dataString) {
     var polygon = new google.maps.Polygon({
-      paths: coordinateArray
- ,     strokeColor: '#FF0000',
+      paths: coordinateArray,
+      strokeColor: '#FF0000',
       strokeOpacity: 0.8,
       strokeWeight: 2,
       fillColor: '#FF0000',
-      fillOpacity: 0.35
+      fillOpacity: 0.1
     });
     polygon.setMap(map);
 
@@ -215,15 +272,14 @@ function initialize() {
     });
 
     polygon.addListener('mouseover', function() {
-      this.setOptions({fillOpacity: 0.8})
+      this.setOptions({fillOpacity: 0.1})
       infowindow.open(map);
     });
 
     polygon.addListener('mouseout', function() {
-      this.setOptions({fillOpacity: 0.35})
+      this.setOptions({fillOpacity: 0.1})
       infowindow.close(map);
     });
-
   }
 
   function drawInfoWindow(content, position) {
@@ -271,11 +327,11 @@ function initialize() {
     var address = addressString;
     geocoder.geocode({'address': address}, function(results, status) {
     if (status === 'OK') {
-      console.log(results);
-      console.log(points[0]);
+      // console.log(results);
+      // console.log(points[0]);
       var lat = results[0].geometry.location.lat();
       var lng = results[0].geometry.location.lng();
-      console.log(lat, lng);
+      // console.log(lat, lng);
       return({'lat': lat, 'lng': lng});
 
 
